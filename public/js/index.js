@@ -1,9 +1,136 @@
 //웹사이트 주소체계: https://nodejs.org/dist/latest-v15.x/docs/api/url.html
 
 //openweathermap: ed14b0a28c58544594d7f537cca24e13
-//kakao: 248a9e636f9a29edae7827c3d39b731b
+//kakao: 0d5cb22a387acf4094423b4c6a7e9334
 
 //7days: https://api.openweathermap.org/data/2.5/onecall?lat=38&lon=127&appid=ed14b0a28c58544594d7f537cca24e13&units=metric
 
 
 //https://api.openweathermap.org/data/2.5/onecall?lat=38&lon=127&appid=ed14b0a28c58544594d7f537cca24e13&units=metric&exclude=minutely,hourly
+
+/* **************************  전역함수 ***************************/
+var map;
+var weatherUrl = 'https://api.openweathermap.org/data/2.5/weather';
+var params = {
+	appid: 'ed14b0a28c58544594d7f537cca24e13',
+	units: 'metric',
+	exclude: 'minutely,hourly'
+}
+
+
+//****************** 이벤트등록 *******************/
+navigator.geolocation.getCurrentPosition(onGetPosition, onGetPositionError);
+
+mapInit();
+
+
+
+/****************** 이벤트콜백 *******************/
+function onGetPosition(r) {
+	getWeather(r.coords.latitude, r.coords.longitude);
+}
+
+function onGetPositionError(e) {
+	getWeather(37.566679, 126.978413);
+}
+
+function onGetWeather(r) {
+	console.log(r);
+	console.log(r.weather[0].icon);
+	updateBg(r.weather[0].icon);
+}
+
+function onGetCity(r) {
+	createMarker(r.cities);
+	// 변경할 사항은 위의 createMarker를 실행하지 않고, openweathermap 통신으로 날씨정보를 받아오는게 완료되면 그때 그 정보로 marker를 만든다.
+}
+
+/****************** 사용자함수 *******************/
+function createMarker(v) {
+	for(var i in v) {
+		var content = '';
+		content += '<div class="popper '+v[i].class+'">';
+		content += '<div class="img-wrap">';
+		content += '<img src="http://openweathermap.org/img/wn/02d.png" class="mw-100">';
+		content += '</div>';
+		content += '<div class="cont-wrap">';
+		content += '<div class="name">'+v[i].name+'</div>';
+		content += '<div class="temp">-3.57도</div>';
+		content += '</div>';
+		content += '<i class="fa fa-caret-down"></i>';
+		content += '</div>';
+		var position = new kakao.maps.LatLng(v[i].lat, v[i].lon); 
+		var customOverlay = new kakao.maps.CustomOverlay({
+			position: position,
+			content: content
+		});
+		customOverlay.setMap(map);
+	}
+}
+
+function getWeather(lat, lon) {
+	params.lat = lat;
+	params.lon = lon;
+	$.get(weatherUrl, params, onGetWeather);
+}
+
+function mapInit() {
+	var mapOption = { 
+		center: new kakao.maps.LatLng(35.8, 127.7),
+		level: 13,
+	};
+	map = new kakao.maps.Map($('#map')[0], mapOption);
+	map.setDraggable(false);
+	map.setZoomable(false);
+	
+	$.get('../json/city.json', onGetCity);
+}
+
+function updateBg(icon) {
+	var bg;
+	switch(icon) {
+		case '01d':
+		case '02d':
+			bg = '01d-bg.jpg';
+			break;
+		case '01n':
+		case '02n':
+			bg = '01n-bg.jpg';
+			break;
+		case '03d':
+		case '04d':
+			bg = '03d-bg.jpg';
+			break;
+		case '03n':
+		case '04n':
+			bg = '03n-bg.jpg';
+			break;
+		case '09d':
+		case '10d':
+			bg = '09d-bg.jpg';
+			break;
+		case '09n':
+		case '10n':
+			bg = '09n-bg.jpg';
+			break;
+		case '11d':
+			bg = '11d-bg.jpg';
+			break;
+		case '11n':
+			bg = '11n-bg.jpg';
+			break;
+		case '13d':
+			bg = '13d-bg.jpg';
+			break;
+		case '13n':
+			bg = '13n-bg.jpg';
+			break;
+		case '50d':
+			bg = '50d-bg.jpg';
+			break;
+		case '50n':
+			bg = '50n-bg.jpg';
+			break;
+	}
+	$(".all-wrapper").css('background-image', 'url(../img/'+bg+')');
+}
