@@ -20,6 +20,7 @@ var params = {
 
 
 /****************** 이벤트등록 *******************/
+moment.locale('ko'); 
 navigator.geolocation.getCurrentPosition(onGetPosition, onGetPositionError);
 mapInit();
 
@@ -70,13 +71,13 @@ function onCreateMarker(r) {
 		return v.id === r.id;
 	});
 	var content = '';
-	content += '<div class="popper '+city[0].class+'" onclick="getWeather('+city[0].id+');">';
+	content += '<div class="popper '+city[0].class+'" onclick="getWeather('+city[0].lat+', '+city[0].lon+');">';
 	content += '<div class="img-wrap">';
 	content += '<img src="http://openweathermap.org/img/wn/'+r.weather[0].icon+'.png" class="mw-100">';
 	content += '</div>';
 	content += '<div class="cont-wrap">';
 	content += '<div class="name">'+city[0].name+'</div>';
-	content += '<div class="temp">'+r.main.temp+'도</div>';
+	content += '<div class="temp">'+r.main.temp+'˚</div>';
 	content += '</div>';
 	content += '<i class="fa fa-caret-down"></i>';
 	content += '</div>';
@@ -88,24 +89,26 @@ function onCreateMarker(r) {
 	customOverlay.setMap(map);
 
 	content  = '<div class="city swiper-slide" onclick="getWeather('+city[0].id+');">';
-	content += '<div class="name">'+city[0].name+'</div>';
-	content += '<div class="content">';
-	content += '<div class="img-wrap">';
-	content += '<img src="http://openweathermap.org/img/wn/'+r.weather[0].icon+'.png" class="mw-100">';
+	content += '	<div class="name">'+city[0].name+'</div>';
+	content += '	<div class="content">';
+	content += '		<div class="img-wrap">';
+	content += '			<img src="http://openweathermap.org/img/wn/'+r.weather[0].icon+'.png" class="mw-100">';
+	content += '		</div>';
+	content += '		<div class="cont-wrap">';
+	content += '			<div class="temp">온도&nbsp;&nbsp; '+r.main.temp+'˚</div>';
+	content += '			<div class="temp">체감&nbsp;&nbsp; '+r.main.feels_like+'˚</div>';
+	content += '		</div>';
+	content += '	</div>';
 	content += '</div>';
-	content += '<div class="cont-wrap">';
-	content += '<div class="temp">온도&nbsp;&nbsp; '+r.main.temp+'도</div>';
-	content += '<div class="temp">체감&nbsp;&nbsp; '+r.main.feels_like+'도</div>';
-	content += '</div></div></div>';
 	$('.city-wrap .swiper-wrapper').append(content);
 	if(cityCnt == cities.length) {
-		var swiper = new Swiper('.city-wrap .swiper-container', {
+		var swiper = new Swiper('.city-wrap > .swiper-container', {
 			slidesPerView: 2,
 			spaceBetween: 10,
 			loop: true,
 			navigation: {
-				nextEl: '.city-wrap .bt-next',
-				prevEl: '.city-wrap .bt-prev',
+				nextEl: '.city-wrap > .bt-next',
+				prevEl: '.city-wrap > .bt-prev',
 			},
 			breakpoints: {
 				576: { slidesPerView: 3 },
@@ -115,11 +118,72 @@ function onCreateMarker(r) {
 	}
 }
 
+// format(	 'YYYY-MM-DD hh:mm:ss '		) 01시
+// format(	 'YYYY-MM-DD HH:mm:ss '		) 13시
+// (i == 0) ? '지금' : moment(r.hourly[i].dt*1000).format('H')+'시('+moment(r.hourly[i].dt*1000).format('D')+'일)'
+
 function onGetWeekly(r) {
 	console.log(r);
+	$('.hourly-container .swiper-wrapper').empty();
+	$('.weekly-container').empty();
+	
+	var html;
+
+	// Hourly
+	for(var i in r.hourly) {
+		html  = '<div class="swiper-slide">';
+		html += '	<div class="time-wrap">'+((i == 0) ? '현재' : moment(r.hourly[i].dt*1000).format('H')+'시('+moment(r.hourly[i].dt*1000).format('D')+'일)')+'</div>';
+		html += '	<div class="img-wrap">';
+		html += '		<img src="http://openweathermap.org/img/wn/'+r.hourly[i].weather[0].icon+'.png" class="mw-100">';
+		html += '	</div>';
+		html += '	<div class="temp-wrap">'+r.hourly[i].temp+'˚</div>';
+		html += '</div>';
+		$('.hourly-container .swiper-wrapper').append(html);
+	}
+	var swiper = new Swiper('.hourly-container > .swiper-container', {
+		slidesPerView: 3,
+		spaceBetween: 10,
+		navigation: {
+			nextEl: '.hourly-container > .bt-next',
+			prevEl: '.hourly-container > .bt-prev',
+		},
+		breakpoints: {
+			576: { slidesPerView: 4 },
+			768: { slidesPerView: 5 },
+			992: { slidesPerView: 6 },
+			1200: { slidesPerView:7 },
+		}
+	});
+
+
+	// Weekly
+	for(var i=1; i<r.daily.length; i++) {
+		html  = '<div class="">';
+		html += '	<div class="yoil">'+moment(r.daily[i].dt*1000).format('dddd')+'</div>';
+		html += '	<div class="icon"><img src="http://openweathermap.org/img/wn/'+r.daily[i].weather[0].icon+'.png" alt="icon" class="mw-100"></div>';
+		html += '	<div class="desc">'+r.daily[i].weather[0].main+'('+r.daily[i].weather[0].description+')</div>';
+		html += '	<div class="max">'+r.daily[i].temp.max+'˚</div>';
+		html += '	<div class="min">'+r.daily[i].temp.min+'˚</div>';
+		html += '</div>';
+		$('.weekly-container').append(html);
+	}
+	/*
+	var swiper = new Swiper('.weekly-container.swiper-container', {
+		slidesPerView: 1,
+		direction: 'vertical',
+		breakpoints: {
+			576: { slidesPerView: 2 },
+			768: { slidesPerView: 3 },
+		}
+	});
+	*/
 }
 
 /****************** 사용자함수 *******************/
+
+/* 
+ */
+
 
 function updateDaily(r) {
 	var $city = $(".daily-container .city");
@@ -175,17 +239,17 @@ function updateBg(icon) {
 	var bg;
 	switch(icon) {
 		case '01d':
-		case '02d':
 			bg = '01d-bg.jpg';
 			break;
 		case '01n':
-		case '02n':
 			bg = '01n-bg.jpg';
 			break;
+		case '02d':
 		case '03d':
 		case '04d':
 			bg = '03d-bg.jpg';
 			break;
+		case '02n':
 		case '03n':
 		case '04n':
 			bg = '03n-bg.jpg';
